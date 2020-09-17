@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "outDir": "dist/",
+    "types": ["@types/node"],
+    "typeRoots": ["./types"],
+    "esModuleInterop": true,
+    "declaration": true,
+    "lib": ["ES2017"]
+  },
+  "exclude": ["node_modules"],
+  "include": ["./src/**/*", "./types/index.d.ts"]
+}
