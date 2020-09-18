@@ -30,7 +30,7 @@ function downloadFile(
   const ext = imageUrl.split(".").reverse()[0].replace(/\?.*/, "");
 
   return new Promise((resolve) => {
-    const num = index ? `_${index}` : "";
+    const num = index === null ? "" : `_${index}`;
 
     const targetPath = `${targetDirPrefix}${num}.${ext}`;
 
