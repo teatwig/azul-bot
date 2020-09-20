@@ -50,23 +50,38 @@ function downloadFile(
   // remove request parameters from extension
   const ext = mediaUrl.split(".").reverse()[0].replace(/\?.*/, "");
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const num = index == null ? "" : `_${index}`;
 
     const targetPath = `${targetDirPrefix}${num}.${ext}`;
 
-    const stream = fs.createWriteStream(targetPath);
-    request(mediaUrl).pipe(stream);
-    stream.on("finish", () => resolve(targetPath));
+    const req = request
+      .get(mediaUrl)
+      .on("response", (resp) => {
+        console.log("Request status: " + resp.statusCode);
+
+        const stream = fs
+          .createWriteStream(targetPath)
+          .on("finish", () => {
+            console.log("Saved file: " + targetPath);
+            resolve(targetPath);
+          })
+          .on("error", (err) => reject(new Error("Filesystem error: " + err)));
+
+        req.pipe(stream);
+      })
+      .on("error", (err) => {
+        reject(new Error("Request error: " + err));
+      });
   });
 }
 
 function writeAsJson(object: any, targetDirPrefix: string): string {
   const targetPath = `${targetDirPrefix}.json`;
 
-  fs.writeFile(targetPath, JSON.stringify(object), function (err) {
+  fs.writeFile(targetPath, JSON.stringify(object), (err) => {
     if (err) {
-      return console.error(err);
+      throw new Error("Filesystem error: " + err.message);
     }
     console.log("File created!");
   });
