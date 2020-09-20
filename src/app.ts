@@ -2,6 +2,7 @@ import path from "path";
 import Twitter from "twitter-lite";
 import { Telegraf } from "telegraf";
 import { getTweet } from "./tweetDownloader";
+import { downloadGenericMedia } from "./download";
 
 require("dotenv").config();
 
@@ -33,22 +34,22 @@ bot.on("message", async (ctx) => {
 
     console.log("args: " + args.map((a) => `"${a}"`));
 
-    let tweetId: string;
+    let source: string;
     let mainTag: string = "_untagged";
     let subTags: string[];
 
     switch (args.length) {
       case 1:
-        tweetId = extractTweetId(args[0]);
+        source = args[0];
         break;
       case 2:
         mainTag = args[0];
-        tweetId = extractTweetId(args[1]);
+        source = args[1];
         break;
       case 3:
         mainTag = args[0];
         subTags = args[1].split(",");
-        tweetId = extractTweetId(args[2]);
+        source = args[2];
         break;
       default:
         throw new Error(`Invalid number of arguments: ${args.length}`);
@@ -63,24 +64,36 @@ bot.on("message", async (ctx) => {
       "";
     const targetDir = path.join(downloadDir, tagDir);
 
-    await getTweet(tweetId, targetDir, twitterClient).then(
-      (result) => {
+    let tweetId = extractTweetId(source);
+
+    if (tweetId) {
+      await getTweet(tweetId, targetDir, twitterClient).then((tweet) => {
         ctx.replyWithHTML(
-          `Saved ${result.localPaths.length} files as <b>${tagDir}</b> from tweet: ${result.id}`
+          `Saved ${tweet.localPaths.length} files as <b>${tagDir}</b> from tweet: ${tweet.id}`
         );
-      },
-      (error) => {
-        throw new Error(error);
-      }
-    );
+      }, rethrowError);
+    } else if (source.match(/^https?:\/\/.+$/)) {
+      await downloadGenericMedia(source, targetDir).then((downloadedPath) => {
+        ctx.replyWithHTML(`Saved media from URL as: ${downloadedPath}`);
+      }, rethrowError);
+    } else {
+      throw new Error("Last argument is neither a tweet nor a URL.");
+    }
   } catch (error) {
-    console.error(`Error: ${error}`);
-    ctx.reply(`Error: ${error}`);
+    let errorMessage = error instanceof Error ? error.message : error;
+    console.error(`Error: ${errorMessage}`);
+    ctx.reply(`Error: ${errorMessage}`);
   }
 });
 bot.launch();
 
-function extractTweetId(arg: string): string {
+console.log(`Started bot with download dir: ${downloadDir}`);
+
+function rethrowError(error: any) {
+  throw error instanceof Error ? error : new Error(error);
+}
+
+function extractTweetId(arg: string): string | null {
   return (
     arg.match(/^.*twitter\.com\/.*\/status\/(\d+)\/?.*$/)?.[1] ||
     arg.match(/^(\d+)$/)?.[1]

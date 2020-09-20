@@ -41,11 +41,7 @@ async function processExtendedTweet(
     localPaths: [],
   };
 
-  console.log(`Got tweet: ${tweet.id}`);
-
-  if (!tweet.mediaUrls) {
-    throw new Error("No media URLs in tweet");
-  }
+  console.log(`Found media for tweet: ${tweet.id}`);
 
   return downloadTweet(tweet, targetDir);
 }
@@ -63,35 +59,45 @@ function createDir(dir: string) {
 }
 
 function getMediaUrls(tweet: any): string[] {
-  if (tweet.extended_entities) {
+  if ("extended_entities" in tweet) {
     return tweet.extended_entities.media.map((media: any) => {
-      if (media.type === "video") {
-        return getVideoUrl(media);
-      } else {
-        return media.media_url;
+      console.log("mediaType: " + media.type);
+      switch (media.type) {
+        case "photo":
+          return media.media_url;
+        case "animated_gif":
+        case "video":
+          return getVideoUrl(media);
+        default:
+          throw new Error(`Unknown media type: ${media.type}`);
       }
     });
   } else {
-    return null;
+    throw new Error("Tweet doesn't contain any media.");
   }
 }
 
 function getHashtags(tweet: any): string[] {
-  if (tweet.entities && tweet.entities.hashtags) {
+  if ("entities" in tweet && "hashtags" in tweet.entities) {
     return tweet.entities.hashtags.map((ht: any) => ht.text);
   }
   return [];
 }
 
 function getVideoUrl(media: any): string {
-  var bestBitrate = 0;
+  var bestBitrate = -1; // gifs have bitrate 0
   var bestVideoUrl;
 
   for (const variant of media.video_info.variants) {
-    if (variant.bitrate && variant.bitrate > bestBitrate) {
+    if ("bitrate" in variant && variant.bitrate > bestBitrate) {
       bestBitrate = variant.bitrate;
       bestVideoUrl = variant.url;
     }
   }
+
+  if (bestVideoUrl === undefined) {
+    throw new Error("Couldn't find a URL for this video.");
+  }
+
   return bestVideoUrl;
 }
