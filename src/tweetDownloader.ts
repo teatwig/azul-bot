@@ -1,6 +1,4 @@
 import Twitter from "twitter-lite";
-import fs from "fs";
-import path from "path";
 import { downloadTweet } from "./download";
 import Tweet from "./contracts/tweet";
 
@@ -26,8 +24,6 @@ async function processExtendedTweet(
   targetDir: string,
   jsonTweet: any
 ): Promise<Tweet> {
-  createDir(targetDir);
-
   const tweet: Tweet = {
     fullText: jsonTweet.full_text,
     createdAt: jsonTweet.created_at,
@@ -44,18 +40,6 @@ async function processExtendedTweet(
   console.log(`Found media for tweet: ${tweet.id}`);
 
   return downloadTweet(tweet, targetDir);
-}
-
-function createDir(dir: string) {
-  let partsCombined = "";
-
-  dir.split(".").forEach((part) => {
-    partsCombined = path.join(partsCombined, part);
-
-    if (!fs.existsSync(partsCombined)) {
-      fs.mkdirSync(partsCombined, { recursive: true });
-    }
-  });
 }
 
 function getMediaUrls(tweet: any): string[] {

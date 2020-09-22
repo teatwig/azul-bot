@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import Twitter from "twitter-lite";
 import { Telegraf } from "telegraf";
@@ -30,7 +31,24 @@ bot.on("message", async (ctx) => {
   }
 
   try {
-    const args = ctx.message.text.split(" ");
+    let messageText = ctx.message.text;
+    if (ctx.message.document) {
+      const caption = ctx.message.caption;
+      const fileId = ctx.message.document.file_id;
+      const fileLink = await ctx.telegram.getFileLink(fileId);
+
+      if (caption) {
+        messageText = `${caption} ${fileLink}`;
+      } else {
+        messageText = fileLink;
+      }
+
+      console.log("Received document message: " + messageText);
+    } else {
+      console.log("Received text message: " + messageText);
+    }
+
+    const args = messageText.split(" ");
 
     console.log("args: " + args.map((a) => `"${a}"`));
 
@@ -62,7 +80,11 @@ bot.on("message", async (ctx) => {
         .map((t) => `[${t.toLowerCase()}]`)
         .join("") || "") +
       "";
+
     const targetDir = path.join(downloadDir, tagDir);
+    createDir(targetDir);
+
+    console.log("Media will be saved in: " + targetDir);
 
     let tweetId = extractTweetId(source);
 
@@ -74,7 +96,8 @@ bot.on("message", async (ctx) => {
       }, rethrowError);
     } else if (source.match(/^https?:\/\/.+$/)) {
       await downloadGenericMedia(source, targetDir).then((downloadedPath) => {
-        ctx.replyWithHTML(`Saved media from URL as: ${downloadedPath}`);
+        const relativePath = path.relative(downloadDir, downloadedPath);
+        ctx.replyWithHTML(`Saved media from URL as: ${relativePath}`);
       }, rethrowError);
     } else {
       throw new Error("Last argument is neither a tweet nor a URL.");
@@ -98,4 +121,16 @@ function extractTweetId(arg: string): string | null {
     arg.match(/^.*twitter\.com\/.*\/status\/(\d+)\/?.*$/)?.[1] ||
     arg.match(/^(\d+)$/)?.[1]
   );
+}
+
+function createDir(dir: string) {
+  let partsCombined = "";
+
+  dir.split(".").forEach((part) => {
+    partsCombined = path.join(partsCombined, part);
+
+    if (!fs.existsSync(partsCombined)) {
+      fs.mkdirSync(partsCombined, { recursive: true });
+    }
+  });
 }
