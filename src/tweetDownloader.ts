@@ -3,10 +3,11 @@ import { downloadTweet } from "./download";
 import Tweet from "./contracts/tweet";
 
 export async function getTweet(
+  client: Twitter,
   tweetId: string,
   targetDir: string,
-  client: Twitter
-) {
+  overrideFiles: boolean
+): Promise<Tweet> {
   console.log(`Trying to fetch tweet: ${tweetId}`);
 
   const jsonTweet = await client
@@ -17,12 +18,13 @@ export async function getTweet(
       throw new Error(reason);
     });
 
-  return processExtendedTweet(targetDir, jsonTweet);
+  return processExtendedTweet(targetDir, jsonTweet, overrideFiles);
 }
 
 async function processExtendedTweet(
   targetDir: string,
-  jsonTweet: any
+  jsonTweet: any,
+  overrideFiles: boolean
 ): Promise<Tweet> {
   const tweet: Tweet = {
     fullText: jsonTweet.full_text,
@@ -34,12 +36,12 @@ async function processExtendedTweet(
     retweetCount: jsonTweet.retweet_count,
     userName: jsonTweet.user.name,
     userScreenName: jsonTweet.user.screen_name,
-    localPaths: [],
+    localPaths: []
   };
 
   console.log(`Found media for tweet: ${tweet.id}`);
 
-  return downloadTweet(tweet, targetDir);
+  return downloadTweet(tweet, targetDir, overrideFiles);
 }
 
 function getMediaUrls(tweet: any): string[] {

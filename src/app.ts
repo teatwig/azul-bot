@@ -48,9 +48,18 @@ bot.on("message", async (ctx) => {
       console.log("Received text message: " + messageText);
     }
 
-    const args = messageText.split(" ");
+    let args = messageText.split(" ");
 
     console.log("args: " + args.map((a) => `"${a}"`));
+
+    let overrideFiles = false;
+    if (args[0] === "!force") {
+      console.log(
+        '"!force" flag set, already downloaded media will be overriden.'
+      );
+      args.shift(); // remove arg
+      overrideFiles = true;
+    }
 
     let source: string;
     let mainTag: string = "_untagged";
@@ -89,13 +98,13 @@ bot.on("message", async (ctx) => {
     let tweetId = extractTweetId(source);
 
     if (tweetId) {
-      await getTweet(tweetId, targetDir, twitterClient).then((tweet) => {
+      await getTweet(twitterClient, tweetId, targetDir, overrideFiles).then((tweet) => {
         ctx.replyWithHTML(
           `Saved ${tweet.localPaths.length} files as <b>${tagDir}</b> from tweet: ${tweet.id}`
         );
       }, rethrowError);
     } else if (source.match(/^https?:\/\/.+$/)) {
-      await downloadGenericMedia(source, targetDir).then((downloadedPath) => {
+      await downloadGenericMedia(source, targetDir, overrideFiles).then((downloadedPath) => {
         const relativePath = path.relative(downloadDir, downloadedPath);
         ctx.replyWithHTML(`Saved media from URL as: ${relativePath}`);
       }, rethrowError);
