@@ -15,7 +15,9 @@ export async function getTweet(
       tweet_mode: "extended",
     })
     .catch((reason) => {
-      throw new Error(reason);
+      // twitter API
+      const error = reason.errors[0];
+      throw new Error(`${error.message} (Code ${error.code})`);
     });
 
   return processExtendedTweet(targetDir, jsonTweet, overrideFiles);
@@ -36,7 +38,7 @@ async function processExtendedTweet(
     retweetCount: jsonTweet.retweet_count,
     userName: jsonTweet.user.name,
     userScreenName: jsonTweet.user.screen_name,
-    localPaths: []
+    localPaths: [],
   };
 
   console.log(`Found media for tweet: ${tweet.id}`);
