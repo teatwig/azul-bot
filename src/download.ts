@@ -10,7 +10,7 @@ export async function downloadTweet(
   tweet: Tweet,
   targetDir: string,
   overrideFiles: boolean
-) {
+): Promise<Tweet> {
   const targetDirPrefix = path.join(
     targetDir,
     `${sourcePrefixTweet}${tweet.id.toString()}`
@@ -37,7 +37,7 @@ export async function downloadGenericMedia(
   url: string,
   targetDir: string,
   overrideFiles: boolean
-) {
+): Promise<string> {
   // replace separators to be path safe
   const currentTime = new Date().toISOString().replace(/[:.]/g, "-");
 
@@ -81,7 +81,11 @@ function downloadFile(
     if (stats.isFile && !overrideFiles) {
       // TODO error msgs HAVE to go somewhere else
       // this file shouldn't tell the user what to do
-      reject(new Error(`Media was already saved on: ${stats.mtime}\nOverride by passing "!force" flag.`));
+      reject(
+        new Error(
+          `Media was already saved on: ${stats.mtime}\nOverride by passing "!force" flag.`
+        )
+      );
     } else {
       console.log("Requesting media from URL: " + mediaUrl);
       const req = request
