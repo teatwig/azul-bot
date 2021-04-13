@@ -48,7 +48,7 @@ function getMediaUrls(tweet: any): string[] {
       console.log("mediaType: " + media.type);
       switch (media.type) {
         case "photo":
-          return media.media_url;
+          return media.media_url + ":orig"; // by default the media URL is not full size
         case "animated_gif":
         case "video":
           return getVideoUrl(media);

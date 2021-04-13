@@ -47,14 +47,18 @@ function downloadFile(
   targetDirPrefix: string,
   index?: number
 ): Promise<string> {
-  // remove request parameters from extension
-  const ext = mediaUrl.split(".").reverse()[0].replace(/\?.*/, "");
+  const ext = mediaUrl
+    .split(".")
+    .reverse()[0]
+    .replace(/\?.*/, "") // remove request parameters from extension
+    .replace(/:[a-z]+$/, ""); // remove twitter size indicator (:orig/:large)
 
   return new Promise((resolve, reject) => {
     const num = index == null ? "" : `_${index}`;
 
     const targetPath = `${targetDirPrefix}${num}.${ext}`;
 
+    console.log("Requesting media from URL: " + mediaUrl);
     const req = request
       .get(mediaUrl)
       .on("response", (resp) => {

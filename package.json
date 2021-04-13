@@ -2,11 +2,12 @@
   "name": "tweet-downloader",
   "version": "0.0.0",
   "private": true,
-  "main": "dist/Index.js",
-  "types": "dist/Index.d.ts",
+  "main": "dist/app.js",
+  "types": "dist/app.d.ts",
   "scripts": {
     "prepublish": "tsc",
-    "start": "tsc && node dist/app.js"
+    "start": "tsc && node dist/app.js",
+    "debug": "tsc && node --inspect dist/app.js"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
