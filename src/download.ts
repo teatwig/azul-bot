@@ -77,38 +77,39 @@ function downloadFile(
     const targetPath = `${targetDirPrefix}${num}.${ext}`;
 
     // throw error if the file already exists
-    const stats = fs.statSync(targetPath);
-    if (stats.isFile && !overrideFiles) {
-      // TODO error msgs HAVE to go somewhere else
-      // this file shouldn't tell the user what to do
-      reject(
-        new Error(
-          `Media was already saved on: ${stats.mtime}\nOverride by passing "!force" flag.`
-        )
-      );
-    } else {
-      console.log("Requesting media from URL: " + mediaUrl);
-      const req = request
-        .get(mediaUrl)
-        .on("response", (resp) => {
-          console.log("Request status: " + resp.statusCode);
+    fs.stat(targetPath, (_err, stats) => {
+      if (stats && stats.isFile && !overrideFiles) {
+        // TODO error msgs HAVE to go somewhere else
+        // this file shouldn't tell the user what to do
+        reject(
+          new Error(
+            `Media was already saved on: ${stats.mtime}\nOverride by passing "!force" flag.`
+          )
+        );
+      } else {
+        console.log("Requesting media from URL: " + mediaUrl);
+        const req = request
+          .get(mediaUrl)
+          .on("response", (resp) => {
+            console.log("Request status: " + resp.statusCode);
 
-          const stream = fs
-            .createWriteStream(targetPath)
-            .on("finish", () => {
-              console.log("Saved file: " + targetPath);
-              resolve(targetPath);
-            })
-            .on("error", (err) =>
-              reject(new Error("Filesystem error: " + err))
-            );
+            const stream = fs
+              .createWriteStream(targetPath)
+              .on("finish", () => {
+                console.log("Saved file: " + targetPath);
+                resolve(targetPath);
+              })
+              .on("error", (err) =>
+                reject(new Error("Filesystem error: " + err))
+              );
 
-          req.pipe(stream);
-        })
-        .on("error", (err) => {
-          reject(new Error("Request error: " + err));
-        });
-    }
+            req.pipe(stream);
+          })
+          .on("error", (err) => {
+            reject(new Error("Request error: " + err));
+          });
+      }
+    });
   });
 }
 
